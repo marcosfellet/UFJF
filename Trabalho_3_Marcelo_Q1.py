@@ -46,32 +46,44 @@ for i, rf_val in enumerate(Rf):
 
 # Ajustes do layout para coincidir com a imagem
 fig.update_layout(
-    title="|vo/vi|",
+    title= None,
 
-    xaxis=dict(
+        xaxis=dict(
         type="log",
-        title="β",
-        range=[0, 4],  # 10^0 a 10^4 (1 a 10000)
+        title=None,
         showline=True,
-        linewidth=2,
         linecolor="black",
-        ticks="outside",
+        linewidth=2,
+        #tickvals=[10, 100, 1000],
     ),
-
     yaxis=dict(
-        title="Ganho (V/V)",
-        range=[0, 25],
+        title=None,
         showline=True,
-        linewidth=2,
         linecolor="black",
-        ticks="outside",
+        linewidth=2,
+        range=[0, 20],
     ),
     plot_bgcolor="white",
-    legend=dict(
-        x=0.8,  # Posição da legenda (direita)
-        y=1,
-        bgcolor="rgba(255, 255, 255, 0.5)",
-    ),
+    annotations=[
+        dict(
+            x=1.15, 
+            y=-0.01,  
+            xref="paper",
+            yref="paper",  # Usar "paper" para coordenadas normalizadas
+            text="β",
+            showarrow=False,
+            font=dict(size=14, color="black"),
+            xanchor="left",
+            yanchor="top",
+        ),
+        dict(
+            x=0.20, y=0.97, xref="x", yref="paper",
+            text="|vo/vi|", showarrow=False,
+            font=dict(size=14, color="black"),
+            xanchor="center", yanchor="bottom",
+        ),
+    ],
+    margin=dict(l=50, r=50, t=50, b=50),
     height=500,
     width=800,  
 )
