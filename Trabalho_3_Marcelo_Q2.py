@@ -1,13 +1,12 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import plotly.graph_objects as go
 # Variaveis conhecidas 
-Rs = 10*1000 # resistencia de fonte
-R1 = 51*1000 # resistencia de base 1
+Rs = 10e3 # resistencia de fonte
+R1 = 51e3  # resistencia de base 1
 R2 = 5.5*1000 # resistencia de base 2
-Rf = [82000,160000,47000] # resistencia de realimentacao
-RC = 10*1000 # resistencia de coletor
-RE = 0.5*1000 # resistencia de emissor
+Rf = [160e3, 82e3 ,47e3 ] # resistencia de realimentacao
+RC = 10e3 # resistencia de coletor
+RE = 0.5e3  # resistencia de emissor
 re = 1.5 # resistencia do modelo T
 
 
@@ -16,42 +15,74 @@ re = 1.5 # resistencia do modelo T
 lista_beta = np.logspace(0, 4, num=1000)
 
 # Configuração do Grafico
+# Lista de estilos de linha e cores
+line_styles = ["solid", "dash", "dot"]
+colors = ["blue", "red", "green"]
 
+
+# Criação da figura
 fig = go.Figure()
-list_color = ["blue","red","green"]
 
-
-# Modelagem do ganho A (V/A) e Beta (A/V)
-for val_color, rf_val in enumerate(Rf): 
-    beta = -1/rf_val
+# Loop para cada Rf
+for i, rf_val in enumerate(Rf):
+    beta = -1 / rf_val
     lista_ganho = []
-    for val, beta_tbj in enumerate(lista_beta):
-        A = -beta_tbj*((1/RC + 1/rf_val) ** (-1))*(((1/R1 + 1/Rs + 1/R2 + 1/rf_val)**(-1))/((beta_tbj+1)*(RE + re) + (1/R1 + 1/Rs + 1/R2 + 1/rf_val)))
-        Af = (A/(1+A*beta))/10000
-        lista_ganho.append(np.abs(Af)) 
-
+    for beta_tbj in np.logspace(0, 4, num=1000):
+        A = -beta_tbj * ((1/RC + 1/rf_val)**(-1)) * ((((1/R1 + 1/Rs + 1/R2 + 1/rf_val)**(-1)) + (beta_tbj + 1)*(RE + re)) / ((beta_tbj + 1)*(RE + re) ))
+        Af = A / (1 + A*beta)
+        Af_v =  Af / Rs
+        lista_ganho.append(np.abs(Af_v))
+    
+    # Adiciona cada traço com legenda em LaTeX
     fig.add_trace(
         go.Scatter(
-            x=lista_beta,
+            x=np.logspace(0, 4, num=1000),
             y=lista_ganho,
             mode="lines",
-            name=f"ganho para Rf = {rf_val}",
-            line=dict(color=list_color[val_color]),
+            name=f"$R_F = {rf_val / 1000:.0f} \, \mathrm{{k\Omega}}$",  # Notação LaTeX
+            line=dict(
+                color=colors[i],
+                dash=line_styles[i],  # Estilo de linha (sólido, pontilhado, tracejado)
+                width=2,
+            ),
         )
     )
 
+# Ajustes do layout para coincidir com a imagem
 fig.update_layout(
-    title=f"vo/vi",
-    xaxis=dict(type = 'log',title="Beta", gridcolor="lightgray"),
-    yaxis=dict(title="Ganho (V/V)", gridcolor="lightgray",range=[0,20]),
-    template="plotly_white",
+    title="|vo/vi|",
+
+    xaxis=dict(
+        type="log",
+        title="β",
+        range=[0, 4],  # 10^0 a 10^4 (1 a 10000)
+        #tickvals=[1, 10, 100, 1000, 10000],
+        #ticktext=["1", "10", "100", "1000", "10000"],  # Rótulos simplificados
+        gridcolor="lightgray",
+    ),
+
+    yaxis=dict(
+        title="Ganho (V/V)",
+        gridcolor="lightgray",
+        range=[0, 20],
+        showline=True,
+        linewidth=2,
+        linecolor="black",
+    ),
+    plot_bgcolor="white",
+    legend=dict(
+        x=0.8,  # Posição da legenda (direita)
+        y=0.95,
+        bgcolor="rgba(255, 255, 255, 0.5)",
+    ),
     height=500,
     width=800,
 )
-
+print(Af)
 fig.show()
 
 
+fig.write_image("grafico_ganho.png") 
 
     
         
