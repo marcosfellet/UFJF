@@ -10,13 +10,13 @@ RE = 0.5e3  # resistencia de emissor
 re = 1.5 # resistencia do modelo T
 
 
-# Configuração do Grafico
+# Configuracao do Grafico
 # Lista de estilos de linha e cores
 line_styles = ["solid", "dash", "dot"]
 colors = ["blue", "red", "green"]
 
 
-# Criação da figura
+# Criacao da figura
 fig = go.Figure()
 
 # Loop para cada Rf
@@ -29,16 +29,16 @@ for i, rf_val in enumerate(Rf):
         Af_v =  Af / Rs
         lista_ganho.append(np.abs(Af_v))
     
-    # Adiciona cada traço com legenda em LaTeX
+    # Adiciona cada traco com legenda em Latex
     fig.add_trace(
         go.Scatter(
             x=np.logspace(0, 4, num=1000),
             y=lista_ganho,
             mode="lines",
-            name=f"$R_F = {rf_val / 1000:.0f} \, \mathrm{{k\Omega}}$",  # Notação LaTeX
+            name=f"$R_F = {rf_val / 1000:.0f} \, \mathrm{{k\Omega}}$",  # Notacao Latex
             line=dict(
                 color=colors[i],
-                dash=line_styles[i],  # Estilo de linha (sólido, tracejado, pontilhado,)
+                dash=line_styles[i],  # Estilo de linha (solido, tracejado, pontilhado,)
                 width=2,
             ),
         )
@@ -103,31 +103,6 @@ Af = A / (1 + A*beta)
 Af_v =  Af / Rs      
 print(Af_v)
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
