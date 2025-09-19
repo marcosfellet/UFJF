@@ -15,12 +15,9 @@ using namespace std;
 int main()
 {
     int a,b,s,c;
-    int f[4];
-    int coe[4];
-    float x1, y;
-    float x[4], x_r[4];
-    x[4] = 1;
-    x_r[4] = 1;
+    int f[4], coe[4];
+    float x, y;
+    float x_r;
     /*a = 10;
     b = 20;
     s = soma(a,b);*/
@@ -32,23 +29,17 @@ int main()
         f[j] = c;
     }
     
-    cout<<"Digite os valores de x da equação de terceiro grau na ordem decrescente: "<<endl;
-    
-    for(int j=0; j<3; j++)
-    {
-        std::cin >> x1;
-        x[j] = x1;
-    }
+    cout<<"Digite o valor de x da equação de terceiro grau "<<endl;
+        
+    std::cin >> x;
     
     for(int i=0; i<4; i++)
     {
         coe[i] = fatorial(f[i]);
     }
-    
-    for(int j=3; j>=1; j--)
-    {
-        x_r[j] = potencia(x[j], j);
-    }
+
+    x_r = potencia(x, 3);
+
     
     /*
     cout<<"Resultado da soma: "<<s<<endl;
@@ -60,9 +51,9 @@ int main()
         cout<<coe[i]<<endl;
     }*/
     
-    for(int j=0; j<3; j++)
+    for(int j=0; j<4; j++)
     {
-        y += x_r[j]*coe[j];
+        y += x_r*coe[j];
     }
     
     cout<<"Coeficientes do polinomio: "<<y<<endl;
