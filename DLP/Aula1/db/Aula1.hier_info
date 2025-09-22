@@ -1,0 +1,5 @@
+|Circuito_Inversor
+in => out.DATAIN
+out <= in.DB_MAX_OUTPUT_PORT_TYPE
+
+
