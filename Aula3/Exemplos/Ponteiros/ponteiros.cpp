@@ -31,6 +31,7 @@ int main()
 	*(vet+1) *=8; //O vetor Fica:{2,16,3,4,5}; ele está apontando para a posição 0, porém a alteração é feita na posição 1 pois a mudança não foi armazenada no ponteiro
 	cout << "Valor de vet[1] apos a operacao: " << vet[1] <<endl;
 	pvet +=8;//O vetor Fica:{2,16,3,4,5}; ele está apontando para a posição 8, fora do vetor
+	// pvet +=3; O vetor Fica:{2,16,3,4,5}; ele está apontando para a posição 3, vet[3]
 	*pvet /= 2;//Nessa linha não é possivel prever oque pode acontecer, já que estamos operando fora da memoria do vetor(invadindo outra memoria)
 	cout << "Valor de vet[3] apos a operacao: " << vet[3] <<endl;
 
