@@ -29,6 +29,7 @@ int main()
 	*vet += 1; //O vetor Fica:{2,2,3,4,5}; ele está apontando para a posição 0
 	cout << "Valor de vet[0] apos a operacao: " << vet[0] <<endl;
 	*(vet+1) *=8; //O vetor Fica:{2,16,3,4,5}; ele está apontando para a posição 0, porém a alteração é feita na posição 1 pois a mudança não foi armazenada no ponteiro
+				  // vet+1 => pula 1 posicao de byte, pois int e armazenado em bytes 
 	cout << "Valor de vet[1] apos a operacao: " << vet[1] <<endl;
 	pvet +=8;//O vetor Fica:{2,16,3,4,5}; ele está apontando para a posição 8, fora do vetor
 	// pvet +=3; O vetor Fica:{2,16,3,4,5}; ele está apontando para a posição 3, vet[3]
