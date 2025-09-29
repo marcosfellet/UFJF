@@ -5,6 +5,7 @@
 
 struct Parametros
 	{
+	    int id; // identidade dos robos
 	    float pos[2]; // posicao em x e y
 	    float vel[2]; // velocidade em em x e y
 	}; 
