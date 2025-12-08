@@ -1,0 +1,24 @@
+module core_9999(
+	input chaveamento,
+	input signed [14:0] in_mem,
+	input [1:0] op,
+	input clk,
+	output reg signed[14:0] out
+);
+reg signed in[14:0];
+reg signed [14:0] chaves,
+
+always @(*) begin
+	if(chaveamento == 1)
+		in[14:0] = chaves[14:0]; 
+	else
+		in[14:0] =  in_mem[14:0];
+end
+wire signed [14:0] saida_ula;
+
+ula_9999 ula(out, in, op, saida_ula);
+
+always @ (posedge clk) out <= saida_ula;
+
+
+endmodule 
