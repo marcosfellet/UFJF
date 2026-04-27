@@ -58,7 +58,6 @@ void vtaskDP(void *pvparameters)
         ESP_LOGI("DP", "Umidade (%%): %f", (float)data.humidity);
         ESP_LOGI("DP", "Temperatura (°C): %f", (float)data.temperature);
         xSemaphoreGive(mutex);
-        vTaskDelay(pdMS_TO_TICKS(50));
     }
 }
 
@@ -81,4 +80,3 @@ xTaskCreate(vtaskBT, "TASK BT", 2048, NULL, 4, NULL);
 xTaskCreate(vtaskRD, "TASK RD", 2048, NULL, 3, NULL);
 xTaskCreate(vtaskDP, "TASK DP", 2048, NULL, 2, NULL);
 
-}
