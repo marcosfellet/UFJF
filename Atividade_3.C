@@ -145,7 +145,8 @@ void app_main(void)
     xSemaphoreCreateBinary(sem_bin2);
     xSemaphoreCreateBinary(sem_bin3);
 
-    xTaskCreate(vtaskColeta, "TASK Coleta", 2048, NULL, 4, NULL);
-    xTaskCreate(vtaskMedia, "TASK Media", 2048, NULL, 3, NULL);
-    xTaskCreate(vtaskMedia, "TASK Display", 2048, NULL, 3, NULL);
+    xTaskCreate(Coleta, "TASK Coleta", 2048, NULL, 4, NULL);
+    xTaskCreate(Media_Temp, "TASK Media", 2048, NULL, 3, NULL);
+    xTaskCreate(Media_Humid, "TASK Display", 2048, NULL, 3, NULL);
+    xTaskCreate(Display, "TASK Display", 2048, NULL, 3, NULL);
 }
