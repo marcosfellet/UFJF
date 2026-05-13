@@ -34,13 +34,11 @@ static void IRAM_ATTR gpio_ISR(void *args){
     {
         quantidade = 10; // cm
         xQueueSendBackFromISR(fila2, &quantidade, &hptw);
-        hptw = pdTRUE;
     }
     if(gpio_get_level(LDIO) == 0)
     {
         quantidade = -10; // cm
-        xQueueSendBackFromISR(fila2, &quantidade, &hptw
-        hptw = pdTRUE;
+        xQueueSendBackFromISR(fila2, &quantidade, &hptw);
     }
 
     if(hptw == pdTRUE){
