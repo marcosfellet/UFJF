@@ -12,7 +12,7 @@
 #define ECHO_GPIO 5
 #define LIMIAR_M 0.1
 #define TAM_FILA 20
-
+#define TAM_FILA2 10
 
 #define BTIO 16
 #define LDIO 17
@@ -22,31 +22,24 @@
 ultrasonic_sensor_t sensor;
 
 SemaphoreHandle_t sem_bin;
-QueueHandle_t fila;
+QueueHandle_t fila, fila2;
 
 float limiar = LIMIAR_M;
 
 static void IRAM_ATTR gpio_ISR(void *args){
     BaseType_t hptw;
     hptw = pdFALSE;
+    char quantidade = 0;
     if(gpio_get_level(BTIO) == 0)
     {
-        limiar += 0.1;
-        if(limiar > 5)
-        {
-            limiar = 5;
-        }
-        //xSemaphoreGiveFromISR(sem_bin, &hptw);
+        quantidade = 10; // cm
+        xQueueSendBackFromISR(fila2, &quantidade, &hptw);
         hptw = pdTRUE;
     }
     if(gpio_get_level(LDIO) == 0)
     {
-        limiar -= 0.1;
-        if(limiar == 0)
-        {
-            limiar = 0.1;
-        }
-        //xSemaphoreGiveFromISR(sem_bin, &hptw);
+        quantidade = -10; // cm
+        xQueueSendBackFromISR(fila2, &quantidade, &hptw
         hptw = pdTRUE;
     }
 
@@ -76,9 +69,20 @@ void alarme(void *pvparameters)
 {
     ESP_LOGI("Alarme", "Task Inicializada");
     float distance;
+    char quantidade;
     while(1)
     {
         xQueueReceive(fila, &distance, portMAX_DELAY);
+        xQueueReceive(fila2, &quantidade, portMAX_DELAY);
+        limiar += quantidade/100;
+        if(limiar <= 0.09)
+        {
+            limiar = 0.1;
+        }
+        if(limiar >= 5)
+        {
+            limiar = 5;
+        }
         if(distance <= limiar)
         {
             ESP_LOGW("Alerta", "Atividades Semafóricas Excessivas");
@@ -115,7 +119,7 @@ void app_main(void)
     // Criar a fila
 
     fila = xQueueCreate(TAM_FILA, sizeof(float));
-
+    fila2 = xQueueCreate(TAM_FILA2, sizeof(char));
     // pinouts
     sensor.trigger_pin = TRIGGER_GPIO;
     sensor.echo_pin = ECHO_GPIO;
