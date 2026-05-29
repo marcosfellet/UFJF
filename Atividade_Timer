@@ -12,8 +12,21 @@
 #define BT1 GPIO_NUM_4
 
 TimerHandle_t timer1;
-QueueHandle_t fila1;
+QueueHandle_t fila1, fila2;
 uint32_t cnt = 0;
+
+char characters[] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
+};
+char *morsecode[] = {
+    ".-   ", "-...  ", "-.-. ", "-..  ", ".    ", "..-. ", "--.  ", ".... ", "..   ", ".--- ",
+    "-.-  ", ".-.. ", "--   ", "-.   ", "---  ", ".--. ", "--.- ", ".-.  ", "...  ", "-    ",
+    "..-  ", "...- ", ".--  ","-..- ", "-.-- ", "--.. ",
+    ".----", "..---", "...--", "....-", ".....",
+    "-....", "--...", "---..", "----.", "-----"
+};
 
 static void IRAM_ATTR gpio_ISR(void *args)
 {
@@ -30,7 +43,7 @@ static void IRAM_ATTR gpio_ISR(void *args)
 
 void timer_char(TimerHandle_t xtimer)
 {
-    char v;
+   char v;
    if(gpio_get_level(BT1) == 1)
     {
         ESP_LOGI("T", ".");
@@ -38,28 +51,57 @@ void timer_char(TimerHandle_t xtimer)
     }
    if(gpio_get_level(BT1) == 0)
     {
-        ESP_LOGI("T", "_");
-        v = '_';
+        ESP_LOGI("T", "-");
+        v = '-';
     }
     xTimerStop(timer1, 0);
 
-    xQueueSendToBack(fila1, &v, portMAX_DELAY);
+    
+
+
+    xQueueSendToBack(fila1, &v, 0);
 }
 
-void decode(void *pvParameters)
+void decodificador(void *pvParameters)
 {
     char v;
     char code[5];
+    ESP_LOGI("DEC", "%s", code);
     while(1)
     {   
+        vTaskDelay(pdMS_TO_TICKS(5000)); 
         for(int i=0; i <= 5; i++)
         { 
-          xQueueReceive(fila1, &v, portMAX_DELAY);
-          code[i] = v;
-            
+          if(xQueueReceive(fila1, &v, 0) == pdTRUE)
+          {
+           code[i] = v;
+          }
+          else
+          {
+            code[i] = ' ';
+          }
+          
         }   
+        xQueueSendToBack(fila2, &code, 0);
         ESP_LOGI("DEC", "%s", code);
-        vTaskDelay(pdMS_TO_TICKS(2000)); 
+
+    }
+}
+
+void tradutor(void *pvParameters)
+{
+    char code[5];
+    while(1)
+    {
+        xQueueReceive(fila2, &code, portMAX_DELAY);
+
+        for(int i=0; i <=36; i++)
+        {
+            if(strcmp(morsecode[i],code) == 0)
+            {
+                ESP_LOGI("Trad", "%c", characters[i]);
+            }
+        }
     }
 }
 
@@ -70,19 +112,20 @@ void app_main(void)
     // Configurando os pinos:
     gpio_reset_pin(BT1);
     gpio_set_direction(BT1, GPIO_MODE_DEF_INPUT);
-
-
     gpio_set_intr_type(BT1, GPIO_INTR_NEGEDGE);
     gpio_intr_enable(BT1);
-
-
     gpio_install_isr_service(0);
     gpio_isr_handler_add(BT1, gpio_ISR, NULL);
 
+    // Criação do timer
+    timer1 = xTimerCreate("Timer_led", pdMS_TO_TICKS(250), pdTRUE, NULL, timer_char);
 
-    timer1 = xTimerCreate("Timer_led", pdMS_TO_TICKS(500), pdTRUE, NULL, timer_char);
-
+    // Criação da fila
     fila1 = xQueueCreate(5, sizeof(char));
+    fila2 = xQueueCreate(1, sizeof(char)*5);
 
-    xTaskCreate(decode, "Decoder", 4098, NULL, 2, NULL);
+    // Criação das tasks
+    xTaskCreate(decodificador, "Decoder", 4098, NULL, 2, NULL);
+    xTaskCreate(tradutor, "Traslate", 4098, NULL, 2, NULL);
+
 }
