@@ -5,136 +5,133 @@
 #include <driver/gpio.h>
 #include <esp_log.h>
 #include <freertos/queue.h>
-#include "dht11.h"
+#include <freertos/timers.h>
+#include <freertos/queue.h>
+#include <string.h>
 
-// defines
+#define BT1 GPIO_NUM_4
 
-#define LIMITE_TEMP 100
-#define LIMITE_HUMID 500 
-#define TAM_MENSAGEM 40
-#define QUANTIDADE_MENSAGENS_RECEBER 1
-#define JANELA_MEDIA 10
-#define BIT0 1<<0
-#define BIT1 1<<1
-#define DHT11_PIN 4
+TimerHandle_t timer1, timer2;
+QueueHandle_t fila1, fila2;
+TaskHandle_t decode;
+uint32_t cnt = 0;
 
+char characters[] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+    'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
+    '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'
+};
+char *morsecode[] = {
+    ".-   ", "-...  ", "-.-. ", "-..  ", ".    ", "..-. ", "--.  ", ".... ", "..   ", ".--- ",
+    "-.-  ", ".-.. ", "--   ", "-.   ", "---  ", ".--. ", "--.- ", ".-.  ", "...  ", "-    ",
+    "..-  ", "...- ", ".--  ","-..- ", "-.-- ", "--.. ",
+    ".----", "..---", "...--", "....-", ".....",
+    "-....", "--...", "---..", "----.", "-----"
+};
 
-// definicao de uma struct para colocar uma id 
-
-// Declaração da Variaveis Globais:
-
-EventGroupHandle_t event_group;
-
-StreamBufferHandle_t buffer_temp, buffer_humid, buffer_media_temp, bufffer_media_humid;
-
-TaskHandle_t alarme_handle, coleta_handle;  
-
-// Tasks
-
-void coleta(void *pvparameters)
+static void IRAM_ATTR gpio_ISR(void *args)
 {
-    ESP_LOGI("Start", "Inicializando a Coleta");
-    struct dht11_reading data;
-    while(1)
+    BaseType_t hptw;
+    hptw = pdFALSE;
+
+    xTimerStartFromISR(timer1, &hptw);
+
+    if(hptw == pdTRUE)
     {
-        data = DHT11_read();
-        if(data.temperature > LIMITE_TEMP || data.humidity > LIMITE_HUMID)
-        {
-            xTaskNotifyGive(alarme_handle);
-        }
-        xStreamBufferSend(buffer_temp, &data.temperature, sizeof(data.temperature), portMAX_DELAY);
-        xStreamBufferSend(buffer_humid, &data.humidity, sizeof(data.humidity), portMAX_DELAY);
+        portYIELD_FROM_ISR();
     }
 }
 
-void media_movel_temp(void *pvparameters)
+void timer_char(TimerHandle_t xtimer)
 {
-    ESP_LOGI("Start", "Calculando a Media Movel");
-    struct dht11_reading data;
-    float media_movel_temp = 0;
-    char i;
-    while(1)
+   char v;
+   if(gpio_get_level(BT1) == 1)
     {
-        for(i = 0; i < JANELA_MEDIA; i++) 
-        {
-            // Recebendo Dados
-            data.temperature = xStreamBufferReceive(buffer_temp, &data.temperature, sizeof(data.temperature), portMAX_DELAY);
-            // Calcula as médias e 
-            media_movel_temp = (1/JANELA_MEDIA)*(media_movel_temp+data.temperature);
-        }
-        xEventGroupSetBits(event_group, BIT0);
-        xStreamBufferSend(buffer_media_temp, &media_movel_temp, sizeof(media_movel_temp), portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(50));
+        ESP_LOGI("T", ".");
+        v = '.';
+        xTimerStart(timer2, 0);
     }
+   if(gpio_get_level(BT1) == 0)
+    {
+        ESP_LOGI("T", "-");
+        v = '-';
+        xTimerStart(timer2, 0);
+    }
+    xTimerStop(timer1, 0);
+    xQueueSendToBack(fila1, &v, 0);
+    
 }
 
-void media_movel_humid(void *pvparameters)
+void timer_code(TimerHandle_t xtimer)
 {
-    ESP_LOGI("Start", "Calculando a Media Movel");
-    struct dht11_reading data;
-    float media_movel_humid = 0;
-    char i;
-    while(1)
-    {
-        for(i = 0; i < JANELA_MEDIA; i++) 
-        {
-            // Recebendo Dados
-            data.humidity = xStreamBufferReceive(buffer_humid, &data.humidity, sizeof(data.humidity), portMAX_DELAY);
-            // Calcula a média 
-            media_movel_humid = (1/JANELA_MEDIA)*(media_movel_humid+data.humidity);
-        }
-        xEventGroupSetBits(event_group, BIT1);
-        xStreamBufferSend(bufffer_media_humid, &media_movel_humid, sizeof(media_movel_humid), portMAX_DELAY);
-        vTaskDelay(pdMS_TO_TICKS(50));
-    }
+    xTaskNotifyGive( decode );
 }
 
-void display(void *pvparameters)
+void decodificador(void *pvParameters)
 {
-    ESP_LOGI("Start", "Inicializando o Display");
-    float media_temp, media_humid = 0;
+    char v;
+    char code[5];
+    ESP_LOGI("DEC", "%s", code);
     while(1)
-    {
-        xEventGroupWaitBits(event_group, BIT0|BIT1, pdTRUE, pdTRUE, portMAX_DELAY);  
-        media_temp = xStreamBufferReceive(buffer_media_temp, &media_temp, sizeof(media_temp), portMAX_DELAY);
-        media_humid = xStreamBufferReceive(bufffer_media_humid, &media_humid, sizeof(media_humid), portMAX_DELAY);
-        ESP_LOGI("Valor calculado!","Media da Temperatura (°C) = %.3f", media_temp);
-        ESP_LOGI("Valor calculado!","Media da Humidade (%%) = %.3f", media_humid);
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-}
-
-void alarme(void *pvparameters)
-{
-    ESP_LOGI("Start", "Inicializando o Alarme");
-    while(1)
-    {
+    {   
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        for(int i=0; i <= 5; i++)
+        { 
+          if(xQueueReceive(fila1, &v, 0) == pdTRUE)
+          {
+           code[i] = v;
+          }
+          else
+          {
+            code[i] = ' ';
+          }
+          
+        }   
+        xQueueSendToBack(fila2, &code, 0);
+        ESP_LOGI("DEC", "%s", code);
 
-        ESP_LOGE("ERROR", "Valores de temperatura ou humidade acima do limite");
+    }
+}
+
+void tradutor(void *pvParameters)
+{
+    char code[5];
+    while(1)
+    {
+        xQueueReceive(fila2, &code, portMAX_DELAY);
+
+        for(int i=0; i <=sizeof(characters); i++)
+        {
+            if(strcmp(morsecode[i],code) == 0)
+            {
+                ESP_LOGI("Trad", "%c", characters[i]);
+            }
+        }
     }
 }
 
 void app_main(void)
 {
+    vTaskPrioritySet(NULL, 5);
 
     // Configurando os pinos:
-    gpio_set_pull_mode(DHT11_PIN, GPIO_PULLUP_ONLY);
-    DHT11_init(DHT11_PIN);
+    gpio_reset_pin(BT1);
+    gpio_set_direction(BT1, GPIO_MODE_DEF_INPUT);
+    gpio_set_intr_type(BT1, GPIO_INTR_NEGEDGE);
+    gpio_intr_enable(BT1);
+    gpio_install_isr_service(0);
+    gpio_isr_handler_add(BT1, gpio_ISR, NULL);
 
-    // Criando Buffer
-    buffer_temp = xStreamBufferCreate(TAM_MENSAGEM, QUANTIDADE_MENSAGENS_RECEBER);
-    buffer_humid = xStreamBufferCreate(TAM_MENSAGEM, QUANTIDADE_MENSAGENS_RECEBER);
-    buffer_media_temp = xStreamBufferCreate(TAM_MENSAGEM, QUANTIDADE_MENSAGENS_RECEBER);
-    bufffer_media_humid = xStreamBufferCreate(TAM_MENSAGEM, QUANTIDADE_MENSAGENS_RECEBER);
+    // Criação do timer
+    timer1 = xTimerCreate("Timer_led", pdMS_TO_TICKS(250), pdTRUE, NULL, timer_char);
+    timer2 = xTimerCreate("Timer_code", pdMS_TO_TICKS(2000), pdFALSE, NULL, timer_code);
 
-    // Criando o Group Event
-    event_group = xEventGroupCreate();
+    // Criação da fila
+    fila1 = xQueueCreate(5, sizeof(char));
+    fila2 = xQueueCreate(1, sizeof(char)*5);
 
-    // Criando as tasks
-    xTaskCreate(coleta, "coleta", 2048, NULL, 2, &coleta_handle);
-    xTaskCreate(media_movel_temp, "media_movel_temp", 2048, NULL, 2, NULL);
-    xTaskCreate(media_movel_humid, "media_movel_humid", 2048, NULL, 2, NULL);
-    xTaskCreate(display, "display", 2048, NULL, 2, NULL);
-    xTaskCreate(alarme, "alarme", 2048, NULL, 2, &alarme_handle);
+    // Criação das tasks
+    xTaskCreate(decodificador, "Decoder", 4098, NULL, 2, &decode);
+    xTaskCreate(tradutor, "Traslate", 4098, NULL, 2, NULL);
+
 }
