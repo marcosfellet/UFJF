@@ -42,17 +42,25 @@ def sinal(ciclos = 100, harmonicos = [5, 7, 9, 21, 23, 25], f_fund = 90, amplitu
     
     return sinal, N_amostras, Fs
 
+def numero_coeficientes(delta_f, Fs):
+    numero_coef = int(np.ceil(1.65 * Fs / delta_f))
+    if numero_coef % 2 == 0:
+        numero_coef += 1 # corrige caso o numero de coeficientes der par (LP => impar)
+    return numero_coef
 
 def filtro_FIR(delta_f, freq_corte, Fs):
     '''
     Filtro passa-baixas com janela de Hamming
     '''
-    numero_coef = int(np.ceil(1.65 * Fs / delta_f))
-    if numero_coef % 2 == 0:
-        numero_coef += 1 # corrige caso o numero de coeficientes der par (LP => impar)
+    num_coef = numero_coeficientes(delta_f, Fs)
+    return signal.firwin(num_coef, freq_corte, window='hamming', fs=Fs)
 
-    return signal.firwin(numero_coef, freq_corte, window='hamming', fs=Fs)
-
+def filtro_FIR_bd(delta_f, banda, desejado, Fs):
+    '''
+    Filtro passa-banda com janela de Hamming
+    '''
+    num_coef = numero_coeficientes(delta_f, Fs)
+    return signal.firls(num_coef, banda, desejado, fs=Fs)
 
 
 #======================================
@@ -64,7 +72,10 @@ amplitude = 1
 fator_corte = 2
 harmonicos = [5, 7, 9, 21, 23, 25]
 evitar_zero_log = 1e-12
-
+banda = []
+for harmonico in harmonicos:
+    banda.append(harmonico*f_fund)
+desejado = [0, 0, 0, 1, 1, 0]
 #======================================
 #=========== sinal ====================
 #======================================
@@ -84,6 +95,15 @@ delta_f = np.abs(freq_corte - f_fund*harmonicos[0]) # faixa de transicao
 coef_filtro_LP = filtro_FIR(delta_f, freq_corte, Fs)
 freq_filtro_LP, resposta_filtro_LP = signal.freqz(coef_filtro_LP, worN=4096, fs = Fs)
 mag_LP = 20*np.log10(resposta_filtro_LP + evitar_zero_log)
+# Sinal filtrado: 
+sinal_filtrado_LP = signal.lfilter(coef_filtro_LP, 1, sinal_original) # Filtro causal
+
+#======================================
+#=========== filtro BP ================
+#======================================
+filtro_bp = filtro_FIR_bd(delta_f, banda, desejado, Fs)
+freq_filtro_BP, resposta_filtro_BP = signal.freqz(filtro_bp, worN=4096, fs = Fs)
+mag_BP = 20*np.log10(resposta_filtro_BP + evitar_zero_log)
 
 #======================================
 #============== Plots =================
