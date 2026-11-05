@@ -47,20 +47,19 @@ def filtragem(alpha = 0.98):
     return signal.lfilter(num, den, sinal_original)
 
 def thd(alpha=0.98):
+    '''
+    Funcao que calcula e retorna o THD
+    '''
     sinal_original, _, Fs = sinal()
     sinal_filtrado = filtragem(alpha)
     sinal_fundamental = sinal_original - sinal_filtrado
-
     # Calcula o raio dos polos do filtro notch
     _, den = filtro_notch(alpha)
     r = np.max(np.abs(np.roots(den)))
-
     # Amostras a descartar para o transitório cair para 1%
     n_trans = int(np.ceil(np.log(0.01) / np.log(r)))
-
     # Garante que não vai descartar mais que o sinal
     n_trans = min(n_trans, len(sinal_original) // 2)
-
     # RMS apenas após o transitório
     sinal_fundamental_RMS = np.sqrt(np.mean(sinal_fundamental[n_trans:]**2))
     sinal_filtrado_RMS = np.sqrt(np.mean(sinal_filtrado[n_trans:]**2))
@@ -87,5 +86,3 @@ while(True):
         for j in range(iteracoes):
             print(f"THD para alpha = {alpha[j]}: {thd_vals[j]} %")
         break
-
-
