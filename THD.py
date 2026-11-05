@@ -52,7 +52,7 @@ def thd(alpha=0.98):
     sinal_fundamental = sinal_original - sinal_filtrado
 
     # Calcula o raio dos polos do filtro notch
-    num, den = filtro_notch(alpha)
+    _, den = filtro_notch(alpha)
     r = np.max(np.abs(np.roots(den)))
 
     # Amostras a descartar para o transitório cair para 1%
@@ -76,10 +76,12 @@ def thd(alpha=0.98):
 # amplitudes = [1, 0.2, 0.2, 0.1]
 iteracoes = 2
 alpha = np.zeros(iteracoes)
+alpha_teste = (0.98, 0.93)
 thd_vals = np.zeros(iteracoes)
 while(True):
     for i in range(iteracoes):
         alpha[i] = round(random.uniform(0.90, 0.99), 2)
+        alpha[i] = alpha_teste[i]
         thd_vals[i] = round(thd(alpha[i])*100,2)
     if alpha[0] != alpha[1]:
         for j in range(iteracoes):
