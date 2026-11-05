@@ -81,8 +81,9 @@ while(True):
     for i in range(iteracoes):
         alpha[i] = round(random.uniform(0.90, 0.99), 2)
         thd_vals[i] = round(thd(alpha[i])*100,2)
-        print(f"THD para alpha = {alpha[i]}: {thd_vals[i]} %")
     if alpha[0] != alpha[1]:
+        for j in range(iteracoes):
+            print(f"THD para alpha = {alpha[i]}: {thd_vals[i]} %")
         break
 
 
