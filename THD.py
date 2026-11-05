@@ -83,7 +83,7 @@ while(True):
         thd_vals[i] = round(thd(alpha[i])*100,2)
     if alpha[0] != alpha[1]:
         for j in range(iteracoes):
-            print(f"THD para alpha = {alpha[i]}: {thd_vals[i]} %")
+            print(f"THD para alpha = {alpha[j]}: {thd_vals[j]} %")
         break
 
 
