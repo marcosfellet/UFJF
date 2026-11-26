@@ -1,9 +1,23 @@
 import numpy as np
 
-def filtro_notch(alpha = 0.98):
+def calcular_beta(f, fs) -> float:
+    '''
+    Calcula beta a partir da frequência de rejeição f0 e amostragem fs
+    '''
+    w0 = 2.0 * np.pi * f / fs
+    return float(np.cos(w0))
+
+
+def filtro_notch(f, fs, alpha = 0.98):
     '''
     Implementa um filtro IIR NOTCH
+    Retorna os coeficientes (b, a) direto de f0, fs e alpha
     '''
+    beta = calcular_beta(f, fs)
+    gain = 0.5 * (1.0 + alpha)
+    b = np.array([gain, -(1.0 + alpha) * beta, gain], dtype=float)
+    a = np.array([1.0, -beta * (1.0 + alpha), alpha], dtype=float)
+    return b, a
     
 
 def gera_sinal(f = 200, ciclos = 100, delta_f = 210, SNR = 40, N = 30) -> list:
