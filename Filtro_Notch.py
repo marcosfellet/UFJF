@@ -1,5 +1,5 @@
 import numpy as np
-
+from scipy import signal
 def calcular_beta(f, fs) -> float:
     '''
     Calcula beta a partir da frequência de rejeição f0 e amostragem fs
@@ -29,13 +29,13 @@ def gera_sinal(f = 200, ciclos = 100, delta_f = 210, SNR = 40, N = 30) -> list:
     SNR => relacao sinal ruido em dB
     N => amostrar por ciclo
     '''
+    Fs = N*f # frequencia de amostragem com 30 amostrar por ciclo
     f2 = f + delta_f
     if f2 > 500:
         f2 = 500
-    t1 = 1/f
-    t2 = 1/f2
+    t1 = np.arange(0, 50 / f, 1 / Fs) # Metade dos 100 ciclos com f1
+    t2 = np.arange(0, 50 / f2, 1 / Fs)
     t_total = t1 + t2
-    Fs = N*f # frequencia de amostragem com 20 amostrar por ciclo
     t = np.arange(0, t_total, 1 / Fs)
     f_inst = np.where(t < t1, f, f2)
     T = 1/Fs
@@ -54,8 +54,12 @@ def gera_sinal(f = 200, ciclos = 100, delta_f = 210, SNR = 40, N = 30) -> list:
 # ---------------------- Parametros Sugeridos -------------------------------
 # ---------------------------------------------------------------------------
 # N = 6000
+f = 200
 Mu = 1e-5
 k2 = 1 - 0.96**2
-
-
+N = 30
+Fs = f*N
+sinal = gera_sinal()
+B, A = filtro_notch(f, Fs)
+sinal_filtrado = signal.lfilter(B, A, sinal)
 
